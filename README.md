@@ -224,3 +224,24 @@ If you end up running this in production, please [reach out](https://twitter.com
 
 
 ## Contributing
+
+PRs and other contributions are very welcome! To set up `graphene_subscriptions` in a development envrionment, do the following:
+
+1. Clone the repo
+    ```bash
+    $ git clone git@github.com:jaydenwindle/graphene-subscriptions.git
+    ```
+
+2. Install [poetry](https://poetry.eustace.io/)
+    ```bash
+    $ curl -sSL https://raw.githubusercontent.com/sdispater/poetry/master/get-poetry.py | python
+    ```
+3. Install dependencies
+    ```bash
+    $ poetry install
+    ```
+
+4. Run the test suite
+    ```bash
+    $ poetry run pytest
+    ```
