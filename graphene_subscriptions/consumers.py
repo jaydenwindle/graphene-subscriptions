@@ -36,7 +36,6 @@ class AttrDict:
 class GraphqlSubscriptionConsumer(SyncConsumer):
 
     def websocket_connect(self, message):
-        print(self.channel_layer)
         async_to_sync(self.channel_layer.group_add)("subscriptions", self.channel_name)
 
         self.send({
@@ -68,7 +67,7 @@ class GraphqlSubscriptionConsumer(SyncConsumer):
                 operation_name=payload.get('operationName'),
                 values=payload.get('variables'),
                 context=context,
-                root_value=stream,
+                root=stream,
                 allow_subscriptions=True,
             )
 

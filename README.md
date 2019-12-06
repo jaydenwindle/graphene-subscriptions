@@ -2,7 +2,8 @@
 
 A plug-and-play GraphQL subscription implementation for Graphene + Django built using Django Channels. Provides support for model creation, mutation and deletion subscriptions out of the box.
 
-# Installation
+
+## Installation
 
 1. Install `graphene-subscriptions`
     ```bash
@@ -46,8 +47,8 @@ A plug-and-play GraphQL subscription implementation for Graphene + Django built 
 
     from your_app.models import YourModel
 
-    post_save.connect(post_save_subscription, sender=YourModel, dispatch_uid="post_save_subscription")
-    post_delete.connect(post_delete_subscription, sender=YourModel, dispatch_uid="post_delete_subscription")
+    post_save.connect(post_save_subscription, sender=YourModel, dispatch_uid="your_model_post_save")
+    post_delete.connect(post_delete_subscription, sender=YourModel, dispatch_uid="your_model_post_delete")
 
     # your_app/apps.py
     from django.apps import AppConfig
@@ -58,12 +59,12 @@ A plug-and-play GraphQL subscription implementation for Graphene + Django built 
         def ready(self):
             import your_app.signals
     ```
+
 6. Define your subscriptions and connect them to your project schema
 
     ```python
     #your_project/schema.py
     import graphene
-    from rx import Observable
 
     from your_app.graphql.subscriptions import YourSubscription
 
@@ -87,6 +88,7 @@ A plug-and-play GraphQL subscription implementation for Graphene + Django built 
     )
     ```
 
+
 ## Defining Subscriptions
 
 Subscriptions in Graphene are defined as normal `ObjectType`'s. Each subscription field resolver must return an observable which emits values matchin the field's type.
@@ -100,7 +102,7 @@ from rx import Observable
 class Subscription(graphene.ObjectType):
     hello = graphene.String()
 
-    def resolve_count_seconds(root, info):
+    def resolve_hello(root, info):
         return Observable.interval(3000) \
                          .map(lambda: "hello world!")
 ```
@@ -199,6 +201,7 @@ class Subscription(graphene.ObjectType):
         ).map(lambda event: event.instance)
 ```
 
+
 ## Production Readiness
 
 This implementation was spun out of an internal implementation I developed which we've been using in production for the past 6 months on a multi-server deployment at [Jetpack](https://www.tryjetpack.com/). We've had relatively few issues with it, and I am confident that it can be reliably used in production environments.
@@ -206,3 +209,6 @@ This implementation was spun out of an internal implementation I developed which
 However, being a startup, our definition of production-readiness may be slightly different from your own. Also keep in mind that the scale at which we operate hasn't been taxing enough to illuminate where the scaling bottlenecks in this implementation may hide.
 
 If you end up running this in production, please [reach out](https://twitter.com/jayden_windle) and let me know!
+
+
+## Contributing
