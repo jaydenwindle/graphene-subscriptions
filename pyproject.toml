@@ -3,6 +3,7 @@ name = "graphene_subscriptions"
 version = "0.1.0"
 description = "A plug-and-play GraphQL subscription implementation for Graphene + Django built using Django Channels."
 authors = ["Jayden Windle <jaydenwindle@gmail.com>"]
+readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.6"
