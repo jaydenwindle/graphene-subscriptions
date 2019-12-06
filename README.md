@@ -1,12 +1,14 @@
 # Graphene Subscriptions
 
 <p>
+    <a href="" alt="License">
+        <img src="https://img.shields.io/github/license/jaydenwindle/graphene-subscriptions" /></a>
     <a href="https://github.com/jaydenwindle/graphene-subscriptions/pulse" alt="Activity">
-        <img src="https://img.shields.io/github/commit-activity/m/badges/shields" /></a>
+        <img src="https://img.shields.io/github/commit-activity/m/jaydenwindle/graphene-subscriptions" /></a>
     <a href="https://github.com/jaydenwindle/graphene-subscriptions/actions?query=workflow%3A%22Test+Package%22">
         <img src="https://github.com/jaydenwindle/graphene-subscriptions/workflows/Test%20Package/badge.svg" alt="build status"></a>
     <a href="https://twitter.com/intent/follow?screen_name=jayden_windle">
-        <img src="https://img.shields.io/twitter/follow/shields_io?style=social&logo=twitter"
+        <img src="https://img.shields.io/twitter/follow/jayden_windle?style=social&logo=twitter"
             alt="follow on Twitter"></a>
 </p>
 
