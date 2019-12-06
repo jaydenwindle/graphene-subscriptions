@@ -17,7 +17,6 @@ from graphene_subscriptions.events import SubscriptionEvent
 
 stream = Subject()
 
-
 # GraphQL types might use info.context.user to access currently authenticated user.
 # When Query is called, info.context is request object,
 # however when Subscription is called, info.context is scope dict.
