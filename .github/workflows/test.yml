@@ -21,5 +21,6 @@ jobs:
         python -m pip install --upgrade pip
         pip install tox tox-gh-actions
         curl -sSL https://raw.githubusercontent.com/sdispater/poetry/master/get-poetry.py | python
+        poetry install -v
     - name: Test with tox
-      run: tox
+      run: poetry run tox
