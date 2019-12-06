@@ -2,7 +2,9 @@
 
 <p>
     <a href="" alt="License">
-        <img src="https://img.shields.io/github/license/jaydenwindle/graphene-subscriptions" /></a>
+        <img src="https://img.shields.io/pypi/l/graphene-subscriptions" /></a>
+    <a href="https://pypi.org/project/graphene-subscriptions/" alt="Pypi">
+        <img src="https://img.shields.io/pypi/v/graphene-subscriptions" /></a>
     <a href="https://github.com/jaydenwindle/graphene-subscriptions/pulse" alt="Activity">
         <img src="https://img.shields.io/github/commit-activity/m/jaydenwindle/graphene-subscriptions" /></a>
     <a href="https://github.com/jaydenwindle/graphene-subscriptions/actions?query=workflow%3A%22Test+Package%22">
