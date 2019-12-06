@@ -103,7 +103,7 @@ A plug-and-play GraphQL subscription implementation for Graphene + Django built 
 
 ## Defining Subscriptions
 
-Subscriptions in Graphene are defined as normal `ObjectType`'s. Each subscription field resolver must return an observable which emits values matchin the field's type.
+Subscriptions in Graphene are defined as normal `ObjectType`'s. Each subscription field resolver must return an observable which emits values matching the field's type.
 
 A simple hello world subscription (which returns the value `"hello world!"` every 3 seconds) could be defined as follows:
 
@@ -216,7 +216,7 @@ class Subscription(graphene.ObjectType):
 
 ## Production Readiness
 
-This implementation was spun out of an internal implementation I developed which we've been using in production for the past 6 months on a multi-server deployment at [Jetpack](https://www.tryjetpack.com/). We've had relatively few issues with it, and I am confident that it can be reliably used in production environments.
+This implementation was spun out of an internal implementation I developed which we've been using in production for the past 6 months at [Jetpack](https://www.tryjetpack.com/). We've had relatively few issues with it, and I am confident that it can be reliably used in production environments.
 
 However, being a startup, our definition of production-readiness may be slightly different from your own. Also keep in mind that the scale at which we operate hasn't been taxing enough to illuminate where the scaling bottlenecks in this implementation may hide.
 
