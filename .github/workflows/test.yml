@@ -1,24 +1,21 @@
 name: Test Package
-
-on: [push]
+on: push
 
 jobs:
-  build:
+  pytest:
+    name: pytest
     runs-on: ubuntu-latest
-    strategy:
-      max-parallel: 3
-      matrix:
-        python-version: [3.6, 3.7, 3.8]
-
     steps:
-    - uses: actions/checkout@v1
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v1
+    - uses: actions/checkout@master
+    - name: Install
+      uses: abatilo/actions-poetry@v1.1.0
       with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install tox tox-gh-actions
-    - name: Test with tox
-      run: tox
+        python_version: 3.7.k
+        poetry_version: 0.12.17
+        args: install
+    - name: Run pytest
+      uses: abatilo/actions-poetry@v1.1.0
+      with:
+        python_version: 3.7.4
+        poetry_version: 0.12.17
+        args: run python -m pytest --cov=src --cov-branch --cov-fail-under=50 tests/
