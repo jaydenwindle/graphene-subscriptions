@@ -1,6 +1,6 @@
 # Graphene Subscriptions
 
-A plug-and-play GraphQL subscription implementation for Graphene + Django built using Django channels. Provides support for model creation, mutation and deletion subscriptions out of the box.
+A plug-and-play GraphQL subscription implementation for Graphene + Django built using Django Channels. Provides support for model creation, mutation and deletion subscriptions out of the box.
 
 # Installation
 

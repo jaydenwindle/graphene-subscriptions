@@ -13,7 +13,7 @@ from rx import Observable
 from rx.subjects import Subject
 from django.core.serializers import deserialize
 
-from subscriptions.events import SubscriptionEvent
+from graphene_subscriptions.events import SubscriptionEvent
 
 stream = Subject()
 

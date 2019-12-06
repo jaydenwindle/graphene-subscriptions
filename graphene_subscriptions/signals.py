@@ -2,7 +2,7 @@ from django.db.models.signals import post_save, post_delete
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 
-from subscriptions.events import ModelSubscriptionEvent, CREATED, UPDATED, DELETED
+from graphene_subscriptions.events import ModelSubscriptionEvent, CREATED, UPDATED, DELETED
 
 
 def post_save_subscription(sender, instance, created, **kwargs):

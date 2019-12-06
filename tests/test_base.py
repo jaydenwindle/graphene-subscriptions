@@ -6,9 +6,9 @@ from channels.layers import get_channel_layer
 from asgiref.sync import sync_to_async
 from graphene_django.settings import graphene_settings
 
-from subscriptions.consumers import GraphqlSubscriptionConsumer
+from graphene_subscriptions.consumers import GraphqlSubscriptionConsumer
 
-from subscriptions.models import SomeModel
+from tests.models import SomeModel
 
 @pytest.mark.asyncio
 @pytest.mark.django_db
