@@ -1,7 +1,9 @@
 [tool.poetry]
 name = "graphene_subscriptions"
-version = "0.1.0"
+version = "0.2.0"
 description = "A plug-and-play GraphQL subscription implementation for Graphene + Django built using Django Channels."
+homepage = "https://github.com/jaydenwindle/graphene-subscriptions"
+repository = "https://github.com/jaydenwindle/graphene-subscriptions"
 authors = ["Jayden Windle <jaydenwindle@gmail.com>"]
 license = "MIT"
 readme = "README.md"
@@ -37,6 +39,7 @@ pytest-asyncio = "^0.10.0"
 pytest-django = "^3.7"
 pytest-emoji = "^0.2.0"
 black = {version = "^18.3-alpha.0", allows-prereleases = true}
+twine = "^3.1"
 [build-system]
 requires = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"
