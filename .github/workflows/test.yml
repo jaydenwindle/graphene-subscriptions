@@ -7,15 +7,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@master
-    - name: Install
-      uses: abatilo/actions-poetry@v1.1.0
-      with:
-        python_version: 3.7.4
-        poetry_version: 0.12.17
-        args: install
-    - name: Run pytest
-      uses: abatilo/actions-poetry@v1.1.0
-      with:
-        python_version: 3.7.4
-        poetry_version: 0.12.17
-        args: run python -m pytest --cov=src --cov-branch --cov-fail-under=50 tests/
+    - uses: actions/setup-python@v1
+    - uses: dschep/install-poetry-action@v1.2
+    - run: poetry run pytest --cov=src --cov-branch --cov-fail-under=50 tests/
