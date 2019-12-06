@@ -1,4 +1,5 @@
 # Graphene Subscriptions
+![https://github.com/jaydenwindle/graphene-subscriptions/workflows/Test%20Package/badge.svg]()
 
 A plug-and-play GraphQL subscription implementation for Graphene + Django built using Django Channels. Provides support for model creation, mutation and deletion subscriptions out of the box.
 
