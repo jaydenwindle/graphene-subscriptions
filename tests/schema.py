@@ -6,6 +6,7 @@ from graphene_subscriptions.events import CREATED, UPDATED, DELETED
 
 from tests.models import SomeModel
 
+
 class SomeModelType(DjangoObjectType):
     class Meta:
         model = SomeModel
@@ -16,20 +17,19 @@ class SomeModelCreatedSubscription(graphene.ObjectType):
 
     def resolve_some_model_created(root, info):
         return root.filter(
-            lambda event:
-                event.operation == CREATED and
-                isinstance(event.instance, SomeModel)
+            lambda event: event.operation == CREATED
+            and isinstance(event.instance, SomeModel)
         ).map(lambda event: event.instance)
+
 
 class SomeModelUpdatedSubscription(graphene.ObjectType):
     some_model_updated = graphene.Field(SomeModelType, id=graphene.ID())
 
     def resolve_some_model_updated(root, info, id):
         return root.filter(
-            lambda event:
-                event.operation == UPDATED and
-                isinstance(event.instance, SomeModel) and
-                event.instance.pk == int(id)
+            lambda event: event.operation == UPDATED
+            and isinstance(event.instance, SomeModel)
+            and event.instance.pk == int(id)
         ).map(lambda event: event.instance)
 
 
@@ -38,16 +38,17 @@ class SomeModelDeletedSubscription(graphene.ObjectType):
 
     def resolve_some_model_deleted(root, info, id):
         return root.filter(
-            lambda event:
-                event.operation == DELETED and
-                isinstance(event.instance, SomeModel) and
-                event.instance.pk == int(id)
+            lambda event: event.operation == DELETED
+            and isinstance(event.instance, SomeModel)
+            and event.instance.pk == int(id)
         ).map(lambda event: event.instance)
 
 
-class Subscription(SomeModelCreatedSubscription,
-                   SomeModelUpdatedSubscription,
-                   SomeModelDeletedSubscription):
+class Subscription(
+    SomeModelCreatedSubscription,
+    SomeModelUpdatedSubscription,
+    SomeModelDeletedSubscription,
+):
     hello = graphene.String()
 
     def resolve_hello(root, info):
@@ -58,7 +59,4 @@ class Query(graphene.ObjectType):
     base = graphene.String()
 
 
-schema = graphene.Schema(
-    query=Query,
-    subscription=Subscription
-)
+schema = graphene.Schema(query=Query, subscription=Subscription)

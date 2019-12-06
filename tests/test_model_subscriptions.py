@@ -9,18 +9,19 @@ from asgiref.sync import sync_to_async
 from graphene_django.settings import graphene_settings
 
 from graphene_subscriptions.consumers import GraphqlSubscriptionConsumer
-from graphene_subscriptions.signals import post_delete_subscription, post_save_subscription
+from graphene_subscriptions.signals import (
+    post_delete_subscription,
+    post_save_subscription,
+)
 
 from tests.models import SomeModel
 
+
 async def query(query, communicator):
-    await communicator.send_json_to({
-        'id': 1,
-        'type': 'start',
-        'payload': {
-            'query': query
-        }
-    })
+    await communicator.send_json_to(
+        {"id": 1, "type": "start", "payload": {"query": query}}
+    )
+
 
 @pytest.mark.asyncio
 @pytest.mark.django_db
@@ -39,12 +40,15 @@ async def test_consumer_schema_execution_works():
 
     response = await communicator.receive_json_from()
 
-    assert response['payload'] == {'data': {'hello': 'hello world!'}, 'errors': None}
+    assert response["payload"] == {"data": {"hello": "hello world!"}, "errors": None}
+
 
 @pytest.mark.asyncio
 @pytest.mark.django_db
 async def test_model_created_subscription_succeeds():
-    post_save.connect(post_save_subscription, sender=SomeModel, dispatch_uid="some_model_post_save")
+    post_save.connect(
+        post_save_subscription, sender=SomeModel, dispatch_uid="some_model_post_save"
+    )
 
     communicator = WebsocketCommunicator(GraphqlSubscriptionConsumer, "/graphql/")
     connected, subprotocol = await communicator.connect()
@@ -64,21 +68,22 @@ async def test_model_created_subscription_succeeds():
 
     response = await communicator.receive_json_from()
 
-    assert response['payload'] == {
-        'data': {
-            'someModelCreated': {
-                'name': s.name,
-            }
-        },
-        'errors': None
+    assert response["payload"] == {
+        "data": {"someModelCreated": {"name": s.name}},
+        "errors": None,
     }
 
-    post_save.disconnect(post_save_subscription, sender=SomeModel, dispatch_uid="some_model_post_save")
+    post_save.disconnect(
+        post_save_subscription, sender=SomeModel, dispatch_uid="some_model_post_save"
+    )
+
 
 @pytest.mark.asyncio
 @pytest.mark.django_db
 async def test_model_updated_subscription_succeeds():
-    post_save.connect(post_save_subscription, sender=SomeModel, dispatch_uid="some_model_post_delete")
+    post_save.connect(
+        post_save_subscription, sender=SomeModel, dispatch_uid="some_model_post_delete"
+    )
 
     communicator = WebsocketCommunicator(GraphqlSubscriptionConsumer, "/graphql/")
     connected, subprotocol = await communicator.connect()
@@ -86,13 +91,16 @@ async def test_model_updated_subscription_succeeds():
 
     s = await sync_to_async(SomeModel.objects.create)(name="test name")
 
-    subscription = """
+    subscription = (
+        """
         subscription {
             someModelUpdated(id: %d) {
                 name
             }
         }
-    """ % s.pk
+    """
+        % s.pk
+    )
 
     await query(subscription, communicator)
 
@@ -100,21 +108,24 @@ async def test_model_updated_subscription_succeeds():
 
     response = await communicator.receive_json_from()
 
-    assert response['payload'] == {
-        'data': {
-            'someModelUpdated': {
-                'name': s.name,
-            }
-        },
-        'errors': None
+    assert response["payload"] == {
+        "data": {"someModelUpdated": {"name": s.name}},
+        "errors": None,
     }
 
-    post_save.disconnect(post_save_subscription, sender=SomeModel, dispatch_uid="some_model_post_delete")
+    post_save.disconnect(
+        post_save_subscription, sender=SomeModel, dispatch_uid="some_model_post_delete"
+    )
+
 
 @pytest.mark.asyncio
 @pytest.mark.django_db
 async def test_model_deleted_subscription_succeeds():
-    post_delete.connect(post_delete_subscription, sender=SomeModel, dispatch_uid="some_model_post_delete")
+    post_delete.connect(
+        post_delete_subscription,
+        sender=SomeModel,
+        dispatch_uid="some_model_post_delete",
+    )
 
     communicator = WebsocketCommunicator(GraphqlSubscriptionConsumer, "/graphql/")
     connected, subprotocol = await communicator.connect()
@@ -122,13 +133,16 @@ async def test_model_deleted_subscription_succeeds():
 
     s = await sync_to_async(SomeModel.objects.create)(name="test name")
 
-    subscription = """
+    subscription = (
+        """
         subscription {
             someModelDeleted(id: %d) {
                 name
             }
         }
-    """ % s.pk
+    """
+        % s.pk
+    )
 
     await query(subscription, communicator)
 
@@ -136,13 +150,13 @@ async def test_model_deleted_subscription_succeeds():
 
     response = await communicator.receive_json_from()
 
-    assert response['payload'] == {
-        'data': {
-            'someModelDeleted': {
-                'name': s.name,
-            }
-        },
-        'errors': None
+    assert response["payload"] == {
+        "data": {"someModelDeleted": {"name": s.name}},
+        "errors": None,
     }
 
-    post_delete.disconnect(post_delete_subscription, sender=SomeModel, dispatch_uid="some_model_post_delete")
+    post_delete.disconnect(
+        post_delete_subscription,
+        sender=SomeModel,
+        dispatch_uid="some_model_post_delete",
+    )

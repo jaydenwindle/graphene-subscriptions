@@ -34,65 +34,63 @@ class AttrDict:
 
 
 class GraphqlSubscriptionConsumer(SyncConsumer):
-
     def websocket_connect(self, message):
         async_to_sync(self.channel_layer.group_add)("subscriptions", self.channel_name)
 
-        self.send({
-            "type": "websocket.accept",
-            "subprotocol": "graphql-ws"
-        })
+        self.send({"type": "websocket.accept", "subprotocol": "graphql-ws"})
 
     def websocket_disconnect(self, message):
-        self.send({
-            "type": "websocket.close", "code": 1000
-        })
+        self.send({"type": "websocket.close", "code": 1000})
         raise StopConsumer()
 
     def websocket_receive(self, message):
-        request = json.loads(message['text'])
-        id = request.get('id')
+        request = json.loads(message["text"])
+        id = request.get("id")
 
-        if request['type'] == 'connection_init':
+        if request["type"] == "connection_init":
             return
 
-        elif request['type'] == 'start':
-            payload = request['payload']
+        elif request["type"] == "start":
+            payload = request["payload"]
             context = AttrDict(self.scope)
 
             schema = graphene_settings.SCHEMA
 
             result = schema.execute(
-                payload['query'],
-                operation_name=payload.get('operationName'),
-                values=payload.get('variables'),
+                payload["query"],
+                operation_name=payload.get("operationName"),
+                values=payload.get("variables"),
                 context=context,
                 root=stream,
                 allow_subscriptions=True,
             )
 
-            if hasattr(result, 'subscribe'):
+            if hasattr(result, "subscribe"):
                 result.subscribe(functools.partial(self._send_result, id))
             else:
                 self._send_result(id, result)
-            
-        elif request['type'] == 'stop':
+
+        elif request["type"] == "stop":
             pass
 
     def signal_fired(self, message):
-        stream.on_next(SubscriptionEvent.from_dict(message['event']))
-    
+        stream.on_next(SubscriptionEvent.from_dict(message["event"]))
+
     def _send_result(self, id, result):
         errors = result.errors
 
-        self.send({
-            'type': 'websocket.send',
-            'text': json.dumps({
-                'id': id,
-                'type': 'data',
-                'payload': {
-                    'data': result.data,
-                    'errors': list(map(str, errors)) if errors else None,
-                }
-            })
-        })
+        self.send(
+            {
+                "type": "websocket.send",
+                "text": json.dumps(
+                    {
+                        "id": id,
+                        "type": "data",
+                        "payload": {
+                            "data": result.data,
+                            "errors": list(map(str, errors)) if errors else None,
+                        },
+                    }
+                ),
+            }
+        )
