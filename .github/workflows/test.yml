@@ -12,4 +12,4 @@ jobs:
         python-version: '3.7'
     - run: curl -sSL https://raw.githubusercontent.com/sdispater/poetry/master/get-poetry.py | python
     - run: $HOME/.poetry/bin/poetry install -v
-    - run: $HOME/.poetry/bin/poetry run pytest --cov=src --cov-branch --cov-fail-under=50 tests/
+    - run: $HOME/.poetry/bin/poetry run pytest tests/
