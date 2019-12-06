@@ -8,5 +8,5 @@ jobs:
     steps:
     - uses: actions/checkout@master
     - uses: actions/setup-python@v1
-    - uses: dschep/install-poetry-action@v1.2
-    - run: poetry run pytest --cov=src --cov-branch --cov-fail-under=50 tests/
+    - run: curl -sSL https://raw.githubusercontent.com/sdispater/poetry/master/get-poetry.py | python
+    - run: $HOME/.poetry/bin run pytest --cov=src --cov-branch --cov-fail-under=50 tests/
