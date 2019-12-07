@@ -29,7 +29,7 @@ A plug-and-play GraphQL subscription implementation for Graphene + Django built 
     ```python
     # your_project/settings.py
     INSTALLED_APPS = [
-        ...
+        # ...
         'graphene_subscriptions'
     ]
     ```
