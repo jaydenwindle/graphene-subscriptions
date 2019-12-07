@@ -179,20 +179,15 @@ async def test_custom_event_subscription_succeeds():
 
     await query(subscription, communicator)
 
-    time.sleep(0.5) # not sure why this is needed
+    time.sleep(0.5)  # not sure why this is needed
 
-    event = SubscriptionEvent(
-        operation=CUSTOM_EVENT,
-        instance="some value"
-    )
+    event = SubscriptionEvent(operation=CUSTOM_EVENT, instance="some value")
 
     await sync_to_async(event.send)()
 
     response = await communicator.receive_json_from()
 
     assert response["payload"] == {
-        "data": {
-            'customSubscription': 'some value'
-        },
+        "data": {"customSubscription": "some value"},
         "errors": None,
     }

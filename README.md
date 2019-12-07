@@ -233,7 +233,7 @@ class CustomEventSubscription(graphene.ObjectType):
     def resolve_custom_subscription(root, info):
         return root.filter(
             lambda event:
-                event.operation == CUSTOM_EVENT and
+                event.operation == CUSTOM_EVENT
         ).map(lambda event: event.instance)
 
 

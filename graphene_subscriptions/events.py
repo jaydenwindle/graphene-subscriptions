@@ -13,7 +13,7 @@ class SubscriptionEvent:
     def __init__(self, operation=None, instance=None):
         self.operation = operation
         self.instance = instance
-    
+
     def send(self):
         channel_layer = get_channel_layer()
         async_to_sync(channel_layer.group_send)(
