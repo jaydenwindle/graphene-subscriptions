@@ -17,6 +17,8 @@ from graphene_subscriptions.events import SubscriptionEvent
 
 stream = Subject()
 
+stream.subscribe(lambda event: print(event.operation, event.instance))
+
 # GraphQL types might use info.context.user to access currently authenticated user.
 # When Query is called, info.context is request object,
 # however when Subscription is called, info.context is scope dict.
@@ -64,6 +66,10 @@ class GraphqlSubscriptionConsumer(SyncConsumer):
                 allow_subscriptions=True,
             )
 
+            result.subscribe(lambda value: print(value))
+
+            print(result)
+
             if hasattr(result, "subscribe"):
                 result.subscribe(functools.partial(self._send_result, id))
             else:
@@ -73,7 +79,9 @@ class GraphqlSubscriptionConsumer(SyncConsumer):
             pass
 
     def signal_fired(self, message):
-        stream.on_next(SubscriptionEvent.from_dict(message["event"]))
+        event = SubscriptionEvent.from_dict(message["event"])
+        print(event)
+        stream.on_next(event)
 
     def _send_result(self, id, result):
         errors = result.errors

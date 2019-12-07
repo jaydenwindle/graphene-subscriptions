@@ -121,7 +121,7 @@ class Subscription(graphene.ObjectType):
                          .map(lambda: "hello world!")
 ```
 
-## Receiving Model Events
+## Responding to Model Events
 
 Each subscription that you define will receive a an `Observable` of `SubscriptionEvent`'s as the `root` parameter, which will emit a new `SubscriptionEvent` each time one of the connected signals are fired.
 
@@ -213,6 +213,39 @@ class Subscription(graphene.ObjectType):
                 isinstance(event.instance, YourModel) and
                 event.instance.pk == int(id)
         ).map(lambda event: event.instance)
+```
+
+
+## Custom Events
+
+Sometimes you need to create subscriptions which responds to events other than Django signals. In this case, you can use the `SubscriptionEvent` class directly. (Note: in order to maintain compatibility with Django channels, all `instance` values must be json serializable)
+
+For example, a custom event subscription might look like this:
+
+```python
+import graphene
+
+CUSTOM_EVENT = 'custom_event'
+
+class CustomEventSubscription(graphene.ObjectType):
+    custom_subscription = graphene.Field(CustomType)
+
+    def resolve_custom_subscription(root, info):
+        return root.filter(
+            lambda event:
+                event.operation == CUSTOM_EVENT and
+        ).map(lambda event: event.instance)
+
+
+# elsewhere in your app:
+from graphene_subscriptions.events import SubscriptionEvent
+
+event = SubscriptionEvent(
+    operation=CUSTOM_EVENT,
+    instance=<any json-serializable value>
+)
+
+event.send()
 ```
 
 

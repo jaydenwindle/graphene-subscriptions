@@ -7,6 +7,9 @@ from graphene_subscriptions.events import CREATED, UPDATED, DELETED
 from tests.models import SomeModel
 
 
+CUSTOM_EVENT = 'custom_event'
+
+
 class SomeModelType(DjangoObjectType):
     class Meta:
         model = SomeModel
@@ -44,7 +47,17 @@ class SomeModelDeletedSubscription(graphene.ObjectType):
         ).map(lambda event: event.instance)
 
 
+class CustomEventSubscription(graphene.ObjectType):
+    custom_subscription = graphene.String()
+
+    def resolve_custom_subscription(root, info):
+        print(root)
+        # return Observable.of('hello')
+        return root.map(lambda event: event.instance)
+
+
 class Subscription(
+    CustomEventSubscription,
     SomeModelCreatedSubscription,
     SomeModelUpdatedSubscription,
     SomeModelDeletedSubscription,

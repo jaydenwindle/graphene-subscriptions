@@ -9,12 +9,14 @@ from asgiref.sync import sync_to_async
 from graphene_django.settings import graphene_settings
 
 from graphene_subscriptions.consumers import GraphqlSubscriptionConsumer
+from graphene_subscriptions.events import SubscriptionEvent
 from graphene_subscriptions.signals import (
     post_delete_subscription,
     post_save_subscription,
 )
 
 from tests.models import SomeModel
+from tests.schema import CUSTOM_EVENT
 
 
 async def query(query, communicator):
@@ -160,3 +162,37 @@ async def test_model_deleted_subscription_succeeds():
         sender=SomeModel,
         dispatch_uid="some_model_post_delete",
     )
+
+
+@pytest.mark.asyncio
+@pytest.mark.django_db
+async def test_custom_event_subscription_succeeds():
+    communicator = WebsocketCommunicator(GraphqlSubscriptionConsumer, "/graphql/")
+    connected, subprotocol = await communicator.connect()
+    assert connected
+
+    subscription = """
+        subscription {
+            customSubscription
+        }
+    """
+
+    await query(subscription, communicator)
+
+    time.sleep(0.5) # not sure why this is needed
+
+    event = SubscriptionEvent(
+        operation=CUSTOM_EVENT,
+        instance="some value"
+    )
+
+    await sync_to_async(event.send)()
+
+    response = await communicator.receive_json_from()
+
+    assert response["payload"] == {
+        "data": {
+            'customSubscription': 'some value'
+        },
+        "errors": None,
+    }
