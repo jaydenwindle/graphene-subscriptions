@@ -1,6 +1,8 @@
 import importlib
 from django.db import models
 from django.core.serializers import serialize, deserialize
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 
 CREATED = "created"
 UPDATED = "updated"
@@ -11,6 +13,12 @@ class SubscriptionEvent:
     def __init__(self, operation=None, instance=None):
         self.operation = operation
         self.instance = instance
+    
+    def send(self):
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            "subscriptions", {"type": "signal.fired", "event": self.to_dict()}
+        )
 
     def to_dict(self):
         return {
