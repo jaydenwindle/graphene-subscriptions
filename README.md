@@ -37,6 +37,7 @@ A plug-and-play GraphQL subscription implementation for Graphene + Django built 
 3. Add Django Channels to your project (see: [Django Channels installation docs](https://channels.readthedocs.io/en/latest/installation.html)) and set up [Channel Layers](https://channels.readthedocs.io/en/latest/topics/channel_layers.html). If you don't want to set up a Redis instance in your dev environment yet, you can use the in-memory Channel Layer:
 
     ```python
+    # your_project/settings.py
     CHANNEL_LAYERS = {
         "default": {
             "BACKEND": "channels.layers.InMemoryChannelLayer"
