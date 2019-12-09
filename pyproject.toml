@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "graphene_subscriptions"
-version = "1.0.0"
+version = "1.0.1"
 description = "A plug-and-play GraphQL subscription implementation for Graphene + Django built using Django Channels."
 homepage = "https://github.com/jaydenwindle/graphene-subscriptions"
 repository = "https://github.com/jaydenwindle/graphene-subscriptions"
