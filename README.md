@@ -34,7 +34,15 @@ A plug-and-play GraphQL subscription implementation for Graphene + Django built 
     ]
     ```
 
-3. Add Django Channels to your project (see: [Django Channels installation docs](https://channels.readthedocs.io/en/latest/installation.html))
+3. Add Django Channels to your project (see: [Django Channels installation docs](https://channels.readthedocs.io/en/latest/installation.html)) and set up [Channel Layers](https://channels.readthedocs.io/en/latest/topics/channel_layers.html). If you don't want to set up a Redis instance in your dev environment yet, you can use the in-memory Channel Layer:
+
+    ```python
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels.layers.InMemoryChannelLayer"
+        }
+    }
+    ```
 
 4. Add `GraphqlSubscriptionConsumer` to your `routing.py` file.
 
@@ -87,17 +95,12 @@ A plug-and-play GraphQL subscription implementation for Graphene + Django built 
         base = graphene.String()
 
 
-    class Mutation(graphene.ObjectType):
-        pass
-
-
     class Subscription(YourSubscription):
         pass
 
 
     schema = graphene.Schema(
         query=Query,
-        mutation=Mutation,
         subscription=Subscription
     )
     ```
@@ -118,7 +121,7 @@ class Subscription(graphene.ObjectType):
 
     def resolve_hello(root, info):
         return Observable.interval(3000) \
-                         .map(lambda: "hello world!")
+                         .map(lambda i: "hello world!")
 ```
 
 ## Responding to Model Events
