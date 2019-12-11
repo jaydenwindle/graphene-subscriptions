@@ -60,7 +60,7 @@ class GraphqlSubscriptionConsumer(SyncConsumer):
             result = schema.execute(
                 payload["query"],
                 operation_name=payload.get("operationName"),
-                values=payload.get("variables"),
+                variables=payload.get("variables"),
                 context=context,
                 root=stream,
                 allow_subscriptions=True,

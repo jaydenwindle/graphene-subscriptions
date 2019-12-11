@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.2] - 2019-12-11
+### Added
+- Fixed bug causing subscriptions with variables to fail
+
 ## [1.0.1] - 2019-12-09
 ### Added
 - Several documentation improvements to help new users get started

@@ -19,9 +19,9 @@ from tests.models import SomeModel
 from tests.schema import CUSTOM_EVENT
 
 
-async def query(query, communicator):
+async def query(query, communicator, variables=None):
     await communicator.send_json_to(
-        {"id": 1, "type": "start", "payload": {"query": query}}
+        {"id": 1, "type": "start", "payload": {"query": query, "variables": variables}}
     )
 
 
@@ -161,6 +161,43 @@ async def test_model_deleted_subscription_succeeds():
         post_delete_subscription,
         sender=SomeModel,
         dispatch_uid="some_model_post_delete",
+    )
+
+
+@pytest.mark.asyncio
+@pytest.mark.django_db
+async def test_model_subscription_with_variables_succeeds():
+    post_save.connect(
+        post_save_subscription, sender=SomeModel, dispatch_uid="some_model_post_delete"
+    )
+
+    communicator = WebsocketCommunicator(GraphqlSubscriptionConsumer, "/graphql/")
+    connected, subprotocol = await communicator.connect()
+    assert connected
+
+    s = await sync_to_async(SomeModel.objects.create)(name="test name")
+
+    subscription = """
+        subscription SomeModelUpdated($id: ID){
+            someModelUpdated(id: $id) {
+                name
+            }
+        }
+    """
+
+    await query(subscription, communicator, { "id": s.pk })
+
+    await sync_to_async(s.save)()
+
+    response = await communicator.receive_json_from()
+
+    assert response["payload"] == {
+        "data": {"someModelUpdated": {"name": s.name}},
+        "errors": None,
+    }
+
+    post_save.disconnect(
+        post_save_subscription, sender=SomeModel, dispatch_uid="some_model_post_delete"
     )
 
 
