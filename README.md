@@ -190,7 +190,7 @@ class Subscription(graphene.ObjectType):
         ).map(lambda event: event.instance)
 ```
 
-### Model Updated Subscriptions
+### Model Deleted Subscriptions
 
 Defining a subscription that is fired whenever a given model instance is deleted can be accomplished like so
 
