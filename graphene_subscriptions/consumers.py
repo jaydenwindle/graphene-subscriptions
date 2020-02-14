@@ -46,7 +46,7 @@ class GraphqlSubscriptionConsumer(JsonWebsocketConsumer):
                 group,
                 self.channel_name
             )
-        
+
     def receive_json(self, request):
         id = request.get("id")
 
