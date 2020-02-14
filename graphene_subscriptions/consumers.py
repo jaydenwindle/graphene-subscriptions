@@ -1,17 +1,9 @@
 import functools
-import json
 
-from django.utils.module_loading import import_string
-from django.conf import settings
-from django.core.exceptions import ImproperlyConfigured
 from graphene_django.settings import graphene_settings
-from graphql import parse
 from asgiref.sync import async_to_sync
 from channels.generic.websocket import JsonWebsocketConsumer
-from channels.exceptions import StopConsumer
-from rx import Observable
 from rx.subjects import Subject
-from django.core.serializers import deserialize
 
 from graphene_subscriptions.events import SubscriptionEvent
 
@@ -54,7 +46,7 @@ class GraphqlSubscriptionConsumer(JsonWebsocketConsumer):
                 group,
                 self.channel_name
             )
-
+        
     def receive_json(self, request):
         id = request.get("id")
 

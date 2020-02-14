@@ -1,12 +1,9 @@
-import time
 import pytest
 import asyncio
-from django.test import override_settings
 from django.db.models.signals import post_save, post_delete
 from channels.testing import WebsocketCommunicator
-from channels.layers import get_channel_layer
 from asgiref.sync import sync_to_async
-from graphene_django.settings import graphene_settings
+from channels.db import database_sync_to_async
 
 from graphene_subscriptions.consumers import GraphqlSubscriptionConsumer
 from graphene_subscriptions.events import SubscriptionEvent, ModelSubscriptionEvent, UPDATED
@@ -68,7 +65,7 @@ async def test_model_created_subscription_succeeds():
 
     await query(subscription, communicator)
 
-    s = await sync_to_async(SomeModel.objects.create)(name="test name")
+    s = await database_sync_to_async(SomeModel.objects.create)(name="test name")
 
     response = await communicator.receive_json_from()
 
@@ -95,7 +92,7 @@ async def test_model_updated_subscription_succeeds():
     connected, subprotocol = await communicator.connect()
     assert connected
 
-    s = await sync_to_async(SomeModel.objects.create)(name="test name")
+    s = await database_sync_to_async(SomeModel.objects.create)(name="test name")
 
     subscription = (
         """
@@ -110,7 +107,7 @@ async def test_model_updated_subscription_succeeds():
 
     await query(subscription, communicator)
 
-    await sync_to_async(s.save)()
+    await database_sync_to_async(s.save)()
 
     response = await communicator.receive_json_from()
 
@@ -139,7 +136,7 @@ async def test_model_deleted_subscription_succeeds():
     connected, subprotocol = await communicator.connect()
     assert connected
 
-    s = await sync_to_async(SomeModel.objects.create)(name="test name")
+    s = await database_sync_to_async(SomeModel.objects.create)(name="test name")
 
     subscription = (
         """
@@ -154,7 +151,7 @@ async def test_model_deleted_subscription_succeeds():
 
     await query(subscription, communicator)
 
-    await sync_to_async(s.delete)()
+    await database_sync_to_async(s.delete)()
 
     response = await communicator.receive_json_from()
 
@@ -183,7 +180,7 @@ async def test_model_subscription_with_variables_succeeds():
     connected, subprotocol = await communicator.connect()
     assert connected
 
-    s = await sync_to_async(SomeModel.objects.create)(name="test name")
+    s = await database_sync_to_async(SomeModel.objects.create)(name="test name")
 
     subscription = """
         subscription SomeModelUpdated($id: ID){
@@ -195,7 +192,7 @@ async def test_model_subscription_with_variables_succeeds():
 
     await query(subscription, communicator, { "id": s.pk })
 
-    await sync_to_async(s.save)()
+    await database_sync_to_async(s.save)()
 
     response = await communicator.receive_json_from()
 
@@ -226,7 +223,7 @@ async def test_custom_event_subscription_succeeds():
 
     await query(subscription, communicator)
 
-    time.sleep(0.5)  # not sure why this is needed
+    await asyncio.sleep(0.5) # need to get rid of these
 
     event = SubscriptionEvent(operation=CUSTOM_EVENT, instance="some value")
 
@@ -261,7 +258,7 @@ async def test_model_subscription_with_custom_group():
     connected, subprotocol = await communicator.connect()
     assert connected
 
-    s = await sync_to_async(SomeModel.objects.create)(name="test name")
+    s = await database_sync_to_async(SomeModel.objects.create)(name="test name")
 
     subscription = """
         subscription SomeModelUpdated($id: ID){
@@ -273,9 +270,9 @@ async def test_model_subscription_with_custom_group():
 
     await query(subscription, communicator, { "id": s.pk })
 
-    await asyncio.sleep(1) # need to get rid of these
+    await asyncio.sleep(0.5) # need to get rid of these
 
-    await sync_to_async(s.save)()
+    await database_sync_to_async(s.save)()
 
     response = await communicator.receive_json_from()
 
