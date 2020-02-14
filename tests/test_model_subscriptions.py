@@ -9,7 +9,7 @@ from asgiref.sync import sync_to_async
 from graphene_django.settings import graphene_settings
 
 from graphene_subscriptions.consumers import GraphqlSubscriptionConsumer
-from graphene_subscriptions.events import SubscriptionEvent
+from graphene_subscriptions.events import SubscriptionEvent, ModelSubscriptionEvent, UPDATED
 from graphene_subscriptions.signals import (
     post_delete_subscription,
     post_save_subscription,
@@ -44,6 +44,8 @@ async def test_consumer_schema_execution_works():
 
     assert response["payload"] == {"data": {"hello": "hello world!"}, "errors": None}
 
+    await communicator.disconnect()
+
 
 @pytest.mark.asyncio
 @pytest.mark.django_db
@@ -74,6 +76,8 @@ async def test_model_created_subscription_succeeds():
         "data": {"someModelCreated": {"name": s.name}},
         "errors": None,
     }
+
+    await communicator.disconnect()
 
     post_save.disconnect(
         post_save_subscription, sender=SomeModel, dispatch_uid="some_model_post_save"
@@ -114,6 +118,8 @@ async def test_model_updated_subscription_succeeds():
         "data": {"someModelUpdated": {"name": s.name}},
         "errors": None,
     }
+
+    await communicator.disconnect()
 
     post_save.disconnect(
         post_save_subscription, sender=SomeModel, dispatch_uid="some_model_post_delete"
@@ -157,6 +163,8 @@ async def test_model_deleted_subscription_succeeds():
         "errors": None,
     }
 
+    await communicator.disconnect()
+
     post_delete.disconnect(
         post_delete_subscription,
         sender=SomeModel,
@@ -196,6 +204,8 @@ async def test_model_subscription_with_variables_succeeds():
         "errors": None,
     }
 
+    await communicator.disconnect()
+
     post_save.disconnect(
         post_save_subscription, sender=SomeModel, dispatch_uid="some_model_post_delete"
     )
@@ -228,3 +238,54 @@ async def test_custom_event_subscription_succeeds():
         "data": {"customSubscription": "some value"},
         "errors": None,
     }
+
+    await communicator.disconnect()
+
+
+@pytest.mark.asyncio
+@pytest.mark.django_db
+async def test_model_subscription_with_custom_group():
+    def custom_post_save_subscription(sender, instance, created, **kwargs):
+        if not created:
+            ModelSubscriptionEvent(
+                operation=UPDATED,
+                instance=instance,
+                group=f"modelUpdated.{instance.id}"
+            ).send()
+
+    post_save.connect(
+        custom_post_save_subscription, sender=SomeModel, dispatch_uid="some_model_updated"
+    )
+
+    communicator = WebsocketCommunicator(GraphqlSubscriptionConsumer, "/graphql/")
+    connected, subprotocol = await communicator.connect()
+    assert connected
+
+    s = await sync_to_async(SomeModel.objects.create)(name="test name")
+
+    subscription = """
+        subscription SomeModelUpdated($id: ID){
+            someModelUpdatedCustom(id: $id) {
+                name
+            }
+        }
+    """
+
+    await query(subscription, communicator, { "id": s.pk })
+
+    await asyncio.sleep(1) # need to get rid of these
+
+    await sync_to_async(s.save)()
+
+    response = await communicator.receive_json_from()
+
+    assert response["payload"] == {
+        "data": {"someModelUpdatedCustom": {"name": s.name}},
+        "errors": None,
+    }
+
+    await communicator.disconnect()
+
+    post_save.disconnect(
+        custom_post_save_subscription, sender=SomeModel, dispatch_uid="some_model_updated"
+    )

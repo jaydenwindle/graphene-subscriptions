@@ -10,14 +10,15 @@ DELETED = "deleted"
 
 
 class SubscriptionEvent:
-    def __init__(self, operation=None, instance=None):
+    def __init__(self, operation=None, instance=None, group=None):
         self.operation = operation
         self.instance = instance
+        self.group = group if group is not None else "subscriptions"
 
     def send(self):
         channel_layer = get_channel_layer()
         async_to_sync(channel_layer.group_send)(
-            "subscriptions", {"type": "signal.fired", "event": self.to_dict()}
+            self.group, {"type": "signal.fired", "event": self.to_dict()}
         )
 
     def to_dict(self):
@@ -37,8 +38,8 @@ class SubscriptionEvent:
 
 
 class ModelSubscriptionEvent(SubscriptionEvent):
-    def __init__(self, operation=None, instance=None):
-        super(ModelSubscriptionEvent, self).__init__(operation, instance)
+    def __init__(self, operation=None, instance=None, group=None):
+        super(ModelSubscriptionEvent, self).__init__(operation, instance, group)
 
         if type(self.instance) == str:
             # deserialize django object

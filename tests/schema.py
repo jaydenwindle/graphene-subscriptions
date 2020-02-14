@@ -36,6 +36,14 @@ class SomeModelUpdatedSubscription(graphene.ObjectType):
         ).map(lambda event: event.instance)
 
 
+class SomeModelUpdatedCustomSubscription(graphene.ObjectType):
+    some_model_updated_custom = graphene.Field(SomeModelType, id=graphene.ID())
+
+    def resolve_some_model_updated_custom(root, info, id):
+        info.context.subscribe(f"modelUpdated.{id}")
+        return root.map(lambda event: event.instance)
+
+
 class SomeModelDeletedSubscription(graphene.ObjectType):
     some_model_deleted = graphene.Field(SomeModelType, id=graphene.ID())
 
@@ -60,6 +68,7 @@ class Subscription(
     CustomEventSubscription,
     SomeModelCreatedSubscription,
     SomeModelUpdatedSubscription,
+    SomeModelUpdatedCustomSubscription,
     SomeModelDeletedSubscription,
 ):
     hello = graphene.String()

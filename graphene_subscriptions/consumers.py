@@ -7,7 +7,7 @@ from django.core.exceptions import ImproperlyConfigured
 from graphene_django.settings import graphene_settings
 from graphql import parse
 from asgiref.sync import async_to_sync
-from channels.consumer import SyncConsumer
+from channels.generic.websocket import JsonWebsocketConsumer
 from channels.exceptions import StopConsumer
 from rx import Observable
 from rx.subjects import Subject
@@ -34,18 +34,28 @@ class AttrDict:
         return self.data.get(item)
 
 
-class GraphqlSubscriptionConsumer(SyncConsumer):
-    def websocket_connect(self, message):
-        async_to_sync(self.channel_layer.group_add)("subscriptions", self.channel_name)
+class GraphqlSubscriptionConsumer(JsonWebsocketConsumer):
+    groups = []
 
-        self.send({"type": "websocket.accept", "subprotocol": "graphql-ws"})
+    def subscribe(self, name):
+        if name not in self.groups:
+            self.groups.append(name)
+            async_to_sync(self.channel_layer.group_add)(name, self.channel_name)
 
-    def websocket_disconnect(self, message):
-        self.send({"type": "websocket.close", "code": 1000})
-        raise StopConsumer()
+    def connect(self):
+        self.subscribe('subscriptions')
 
-    def websocket_receive(self, message):
-        request = json.loads(message["text"])
+        self.scope['subscribe'] = self.subscribe
+        self.accept("graphql-ws")
+
+    def disconnect(self, close_code):
+        for group in self.groups:
+            async_to_sync(self.channel_layer.group_discard)(
+                group,
+                self.channel_name
+            )
+
+    def receive_json(self, request):
         id = request.get("id")
 
         if request["type"] == "connection_init":
@@ -80,18 +90,13 @@ class GraphqlSubscriptionConsumer(SyncConsumer):
     def _send_result(self, id, result):
         errors = result.errors
 
-        self.send(
+        self.send_json(
             {
-                "type": "websocket.send",
-                "text": json.dumps(
-                    {
-                        "id": id,
-                        "type": "data",
-                        "payload": {
-                            "data": result.data,
-                            "errors": list(map(str, errors)) if errors else None,
-                        },
-                    }
-                ),
+                "id": id,
+                "type": "data",
+                "payload": {
+                    "data": result.data,
+                    "errors": list(map(str, errors)) if errors else None,
+                },
             }
         )
