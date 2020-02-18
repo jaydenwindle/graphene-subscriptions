@@ -1,6 +1,8 @@
 # Graphene Subscriptions
 
 <p>
+    <a href="https://gitter.im/graphene-subscriptions/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge" alt="Gitter">
+        <img src="https://badges.gitter.im/graphene-subscriptions/community.svg" /></a>
     <a href="" alt="License">
         <img src="https://img.shields.io/pypi/l/graphene-subscriptions" /></a>
     <a href="https://pypi.org/project/graphene-subscriptions/" alt="Pypi">
