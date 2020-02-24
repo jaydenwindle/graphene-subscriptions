@@ -5,10 +5,9 @@ from asgiref.sync import async_to_sync
 from channels.generic.websocket import JsonWebsocketConsumer
 from rx.subjects import Subject
 
-from graphene_subscriptions.events import SubscriptionEvent
+from graphene_subscriptions.events import deserialize_value
 
 
-stream = Subject()
 
 
 # GraphQL types might use info.context.user to access currently authenticated user.
@@ -27,17 +26,17 @@ class AttrDict:
 
 
 class GraphqlSubscriptionConsumer(JsonWebsocketConsumer):
-    groups = []
+    groups = {}
 
     def subscribe(self, name):
+        stream = Subject()
         if name not in self.groups:
-            self.groups.append(name)
+            self.groups[name] = stream
             async_to_sync(self.channel_layer.group_add)(name, self.channel_name)
+        
+        return stream
 
     def connect(self):
-        self.subscribe('subscriptions')
-
-        self.scope['subscribe'] = self.subscribe
         self.accept("graphql-ws")
 
     def disconnect(self, close_code):
@@ -64,7 +63,7 @@ class GraphqlSubscriptionConsumer(JsonWebsocketConsumer):
                 operation_name=payload.get("operationName"),
                 variables=payload.get("variables"),
                 context=context,
-                root=stream,
+                root=self,
                 allow_subscriptions=True,
             )
 
@@ -76,8 +75,14 @@ class GraphqlSubscriptionConsumer(JsonWebsocketConsumer):
         elif request["type"] == "stop":
             pass
 
-    def signal_fired(self, message):
-        stream.on_next(SubscriptionEvent.from_dict(message["event"]))
+    def subscription_triggered(self, message):
+        group = message['group']
+
+        if group in self.groups:
+            stream = self.groups[group] 
+            value = deserialize_value(message['value'])
+
+            stream.on_next(value)
 
     def _send_result(self, id, result):
         errors = result.errors

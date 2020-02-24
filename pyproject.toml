@@ -32,6 +32,7 @@ python = ">=3.6"
 django = ">=2.2"
 channels = "^2.3"
 graphene-django = "^2.7"
+django-lifecycle = "^0.7.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.3"

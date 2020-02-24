@@ -1,12 +1,28 @@
+import json
 import importlib
 from django.db import models
 from django.core.serializers import serialize, deserialize
+from django.core.serializers.base import DeserializationError
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
+
+from graphene_subscriptions.serialize import serialize_value, deserialize_value
 
 CREATED = "created"
 UPDATED = "updated"
 DELETED = "deleted"
+
+
+def trigger_subscription(group, value):
+    channel_layer = get_channel_layer()
+    async_to_sync(channel_layer.group_send)(
+        group,
+        {
+            "type": "subscription.triggered",
+            "value": serialize_value(value),
+            "group": group
+        }
+    )
 
 
 class SubscriptionEvent:
