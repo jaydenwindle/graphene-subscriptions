@@ -13,7 +13,6 @@ from graphene_subscriptions.consumers import GraphqlSubscriptionConsumer
 from graphene_subscriptions.events import trigger_subscription, serialize_value
 
 from tests.models import SomeModel
-from tests.schema import CUSTOM_EVENT
 
 
 async def subscribe(query, variables=None):
@@ -64,6 +63,8 @@ async def test_custom_subscription_works():
 
     assert response['payload']['data']['customSubscription'] == 'success'
 
+    await subscription.disconnect()
+
 
 @pytest.mark.asyncio
 @pytest.mark.django_db
@@ -87,6 +88,8 @@ async def test_model_created_subscription():
 
     assert response['payload']['data']['someModelCreated']['id'] == str(instance.pk)
     assert response['payload']['data']['someModelCreated']['name'] == "test 123"
+
+    await subscription.disconnect()
 
 
 @pytest.mark.asyncio
@@ -115,6 +118,8 @@ async def test_model_updated_subscription():
     assert response['payload']['data']['someModelUpdated']['id'] == str(instance.pk)
     assert response['payload']['data']['someModelUpdated']['name'] == "test 234"
 
+    await subscription.disconnect()
+
 
 @pytest.mark.asyncio
 @pytest.mark.django_db
@@ -141,3 +146,74 @@ async def test_model_deleted_subscription():
 
     assert response['payload']['data']['someModelDeleted']['id'] == str(instance_pk)
     assert response['payload']['data']['someModelDeleted']['name'] == "test 123"
+
+    await subscription.disconnect()
+
+
+@pytest.mark.asyncio
+@pytest.mark.django_db
+async def test_model_updated_subscription_no_conflicts():
+    query = """
+        subscription SomeModelUpdated($id: String) {
+            someModelUpdated(id: $id) {
+                id
+                name
+            }
+        }
+    """
+
+    instance1 = await database_sync_to_async(SomeModel.objects.create)(name="instance 1")
+    instance2 = await database_sync_to_async(SomeModel.objects.create)(name="instance 2")
+
+    subscription = await subscribe(query, { "id": instance1.pk })
+
+    await asyncio.sleep(0.01)
+
+    instance1.name = "instance 1 rules"
+    await database_sync_to_async(instance1.save)()
+
+    response = await subscription.receive_json_from()
+
+    assert response['payload']['data']['someModelUpdated']['id'] == str(instance1.pk)
+    assert response['payload']['data']['someModelUpdated']['name'] == "instance 1 rules"
+
+    instance2.name = "instance 2 drools"
+    await database_sync_to_async(instance2.save)()
+
+    assert await subscription.receive_nothing()
+
+    await subscription.disconnect()
+
+
+@pytest.mark.asyncio
+@pytest.mark.django_db
+async def test_model_deleted_subscription_no_conflicts():
+    query = """
+        subscription SomeModelDeleted($id: String) {
+            someModelDeleted(id: $id) {
+                id
+                name
+            }
+        }
+    """
+    instance1 = await database_sync_to_async(SomeModel.objects.create)(name="instance 1")
+    instance1_pk = instance1.pk
+    instance2 = await database_sync_to_async(SomeModel.objects.create)(name="instance 2")
+    instance2_pk = instance2.pk
+
+    subscription = await subscribe(query, { "id": instance1_pk })
+
+    await asyncio.sleep(0.01)
+
+    await database_sync_to_async(instance1.delete)()
+
+    response = await subscription.receive_json_from()
+
+    assert response['payload']['data']['someModelDeleted']['id'] == str(instance1_pk)
+    assert response['payload']['data']['someModelDeleted']['name'] == "instance 1"
+
+    await database_sync_to_async(instance2.delete)()
+
+    assert await subscription.receive_nothing()
+
+    await subscription.disconnect()
