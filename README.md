@@ -61,26 +61,14 @@ A plug-and-play GraphQL subscription implementation for Graphene + Django built 
     })
     ```
 
-5. Connect signals for any models you want to create subscriptions for
+5. Add `SubscriptionModelMixin` to any models you want to enable subscriptions for
 
     ```python
-    # your_app/signals.py
-    from django.db.models.signals import post_save, post_delete
-    from graphene_subscriptions.signals import post_save_subscription, post_delete_subscription
+    # your_app/models.py
+    from graphene_subscriptions.models import SubscriptionModelMixin
 
-    from your_app.models import YourModel
-
-    post_save.connect(post_save_subscription, sender=YourModel, dispatch_uid="your_model_post_save")
-    post_delete.connect(post_delete_subscription, sender=YourModel, dispatch_uid="your_model_post_delete")
-
-    # your_app/apps.py
-    from django.apps import AppConfig
-
-    class YourAppConfig(AppConfig):
-        name = 'your_app'
-
-        def ready(self):
-            import your_app.signals
+    class YourModel(SubscriptionModelMixin, models.Model):
+        # ...
     ```
 
 6. Define your subscriptions and connect them to your project schema
@@ -88,15 +76,28 @@ A plug-and-play GraphQL subscription implementation for Graphene + Django built 
     ```python
     #your_project/schema.py
     import graphene
+    from graphene_django.types import DjangoObjectType
 
-    from your_app.graphql.subscriptions import YourSubscription
+    from your_app.models import YourModel
+
+
+    class YourModelType(DjangoObjectType):
+        class Meta:
+            model = YourModel
+
+
+    class YourModelCreatedSubscription(graphene.ObjectType):
+        your_model_created = graphene.Field(YourModelType)
+
+        def resolve_your_model_created(root, info):
+            return root.subscribe('yourModelCreated')
 
 
     class Query(graphene.ObjectType):
         base = graphene.String()
 
 
-    class Subscription(YourSubscription):
+    class Subscription(YourModelCreatedSubscription):
         pass
 
 
@@ -125,141 +126,85 @@ class Subscription(graphene.ObjectType):
                          .map(lambda i: "hello world!")
 ```
 
-## Responding to Model Events
+## Subscribing to Events
 
-Each subscription that you define will receive a an `Observable` of `SubscriptionEvent`'s as the `root` parameter, which will emit a new `SubscriptionEvent` each time one of the connected signals are fired.
-
-A `SubscriptionEvent` has two attributes: the `operation` that triggered the event, usually `CREATED`, `UPDATED` or `DELETED`) and the `instance` that triggered the signal.
-
-Since `root` is an `Observable`, you can apply any `rxpy` operations before returning it.
-
-### Model Created Subscriptions
-
-For example, let's create a subscription called `yourModelCreated` that will be fired whenever an instance of `YourModel` is created. Since `root` receives a new event *every time a connected signal is fired*, we'll need to filter for only the events we want. In this case, we want all events where `operation` is `created` and the event `instance` is an instance of our model.
+Most of the time you will want your subscriptions to be able to listen for events that occur in other parts of your application. When you define a subscription resolver, you can use the `subscribe` method of the `root` value to subscribe to a set of events. `subscribe` takes a unique group name as an argument, and returns an `Observable` of all events that are sent to that group. Since the return value of `root.subscribe` is an `Observable`, you can apply any `rxpy` operations and return the result.
 
 ```python
-import graphene
-from graphene_django.types import DjangoObjectType
-from graphene_subscriptions.events import CREATED
+class CustomSubscription(graphene.ObjectType):
+    custom_subscription = graphene.String()
 
-from your_app.models import YourModel
+    def resolve_custom_subscription(root, info):
+        return root.subscribe('customSubscription')
+```
+
+You can then trigger events from other parts of your application using the `trigger_subscription` helper. `trigger_subscription` takes two arguments: the name of the group to send the event to, and the value to send. Make sure that the value you pass to `trigger_subscription` is compatible with the return type you've defined for your subscription resolver, and is either a Django model or a JSON serializable value.
+
+```python
+from graphene_subscriptions.events import trigger_subscription
+
+trigger_subscription('trigger_subscription', 'hello world!')
+```
 
 
-class YourModelType(DjangoObjectType)
-    class Meta:
-        model = YourModel
+## Model Events
+
+Often you'll want to define subscriptions that fire when a Django model is created, updated, or deleted. `graphene-subscriptions` includes a handy model mixin that configures the triggering of these events for you. You can use it by configuring your model to inherit from `SubscriptionModelMixin`.
+
+```python
+# your_app/models.py
+from graphene_subscriptions.models import SubscriptionModelMixin
+
+class YourModel(SubscriptionModelMixin, models.Model):
+    # ...
+```
+
+`SubscriptionModelMixin` will create unique group names for created, updated, and deleted events based on the name of your model, and will send events to these groups automatically.
 
 
-class Subscription(graphene.ObjectType):
+## Model Created Subscriptions
+
+`SubscriptionModelMixin` automatically sends model created events to a unique group called `"<yourModelName>Created"`. For example, if your model is called `YourModel`, then model created events will be sent to the group `"yourModelCreated"`.
+
+You can create a model created subscription that listens for events in this group and returns them to the client by using the `root.subscribe` helper, like so:
+
+```python
+class YourModelCreatedSubscription(graphene.ObjectType):
     your_model_created = graphene.Field(YourModelType)
 
     def resolve_your_model_created(root, info):
-        return root.filter(
-            lambda event:
-                event.operation == CREATED and
-                isinstance(event.instance, YourModel)
-        ).map(lambda event: event.instance)
+        return root.subscribe('yourModelCreated')
 ```
+
 
 ### Model Updated Subscriptions
 
-You can also filter events based on a subscription's arguments. For example, here's a subscription that fires whenever a model is updated:
+Much like model created events, `SubscriptionModelMixin` automatically sends model updated events to a group called `"<yourModelName>Updated.<your_model_id>"`. For example, if your model is called `YourModel` and an instance with `pk == 1` is updated, then a model updated event will be sent to the group `"yourModelUpdated.1"`.
+
+Your subscription resolver can send model updated events from this group to the client by using the `root.subscribe` helper:
 
 ```python
-import graphene
-from graphene_django.types import DjangoObjectType
-from graphene_subscriptions.events import UPDATED 
-
-from your_app.models import YourModel
-
-
-class YourModelType(DjangoObjectType)
-    class Meta:
-        model = YourModel
-
-
-class Subscription(graphene.ObjectType):
-    your_model_updated = graphene.Field(YourModelType, id=graphene.ID())
+class YourModelUpdatedSubscription(graphene.ObjectType):
+    your_model_updated = graphene.Field(YourModelType, id=graphene.String())
 
     def resolve_your_model_updated(root, info, id):
-        return root.filter(
-            lambda event:
-                event.operation == UPDATED and
-                isinstance(event.instance, YourModel) and
-                event.instance.pk == int(id)
-        ).map(lambda event: event.instance)
+        return root.subscribe(f'yourModelUpdated.{id}')
 ```
 
-### Model Updated Subscriptions
 
-Defining a subscription that is fired whenever a given model instance is deleted can be accomplished like so
+### Model Deleted Subscriptions
+
+In a similar manner, `SubscriptionModelMixin` automatically sends model deleted events to a group called `"<yourModelName>Deleted.<your_model_id>"`. For example, if your model is called `YourModel` and an instance with `pk == 1` is deleted, then a model deleted event will be sent to the group `"yourModelDeleted.1"`.
+
+Your subscription resolver can send model deleted events from this group to the client by using the `root.subscribe` helper:
 
 ```python
-import graphene
-from graphene_django.types import DjangoObjectType
-from graphene_subscriptions.events import DELETED 
-
-from your_app.models import YourModel
-
-
-class YourModelType(DjangoObjectType)
-    class Meta:
-        model = YourModel
-
-
-class Subscription(graphene.ObjectType):
-    your_model_deleted = graphene.Field(YourModelType, id=graphene.ID())
+class YourModelDeletedSubscription(graphene.ObjectType):
+    your_model_deleted = graphene.Field(YourModelType, id=graphene.String())
 
     def resolve_your_model_deleted(root, info, id):
-        return root.filter(
-            lambda event:
-                event.operation == DELETED and
-                isinstance(event.instance, YourModel) and
-                event.instance.pk == int(id)
-        ).map(lambda event: event.instance)
+        return root.subscribe(f'yourModelDeleted.{id}')
 ```
-
-
-## Custom Events
-
-Sometimes you need to create subscriptions which responds to events other than Django signals. In this case, you can use the `SubscriptionEvent` class directly. (Note: in order to maintain compatibility with Django channels, all `instance` values must be json serializable)
-
-For example, a custom event subscription might look like this:
-
-```python
-import graphene
-
-CUSTOM_EVENT = 'custom_event'
-
-class CustomEventSubscription(graphene.ObjectType):
-    custom_subscription = graphene.Field(CustomType)
-
-    def resolve_custom_subscription(root, info):
-        return root.filter(
-            lambda event:
-                event.operation == CUSTOM_EVENT
-        ).map(lambda event: event.instance)
-
-
-# elsewhere in your app:
-from graphene_subscriptions.events import SubscriptionEvent
-
-event = SubscriptionEvent(
-    operation=CUSTOM_EVENT,
-    instance=<any json-serializable value>
-)
-
-event.send()
-```
-
-
-## Production Readiness
-
-This implementation was spun out of an internal implementation I developed which we've been using in production for the past 6 months at [Jetpack](https://www.tryjetpack.com/). We've had relatively few issues with it, and I am confident that it can be reliably used in production environments.
-
-However, being a startup, our definition of production-readiness may be slightly different from your own. Also keep in mind that the scale at which we operate hasn't been taxing enough to illuminate where the scaling bottlenecks in this implementation may hide.
-
-If you end up running this in production, please [reach out](https://twitter.com/jayden_windle) and let me know!
 
 
 ## Contributing
