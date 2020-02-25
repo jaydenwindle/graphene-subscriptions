@@ -8,8 +8,6 @@ from rx.subjects import Subject
 from graphene_subscriptions.events import deserialize_value
 
 
-
-
 # GraphQL types might use info.context.user to access currently authenticated user.
 # When Query is called, info.context is request object,
 # however when Subscription is called, info.context is scope dict.

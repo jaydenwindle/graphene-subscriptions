@@ -22,15 +22,31 @@ class SomeModelCreatedSubscription(graphene.ObjectType):
         return root.subscribe('someModelCreated')
 
 
-class TestSubscription(graphene.ObjectType):
-    test_subscription = graphene.String()
+class SomeModelUpdatedSubscription(graphene.ObjectType):
+    some_model_updated = graphene.Field(SomeModelType, id=graphene.String())
 
-    def resolve_test_subscription(root, info):
-        return root.subscribe('testSubscription')
+    def resolve_some_model_updated(root, info, id):
+        return root.subscribe(f'someModelUpdated.{id}')
+
+class SomeModelDeletedSubscription(graphene.ObjectType):
+    some_model_deleted = graphene.Field(SomeModelType, id=graphene.String())
+
+    def resolve_some_model_deleted(root, info, id):
+        return root.subscribe(f'someModelDeleted.{id}')
+
+
+class CustomSubscription(graphene.ObjectType):
+    custom_subscription = graphene.String()
+
+    def resolve_custom_subscription(root, info):
+        return root.subscribe('customSubscription')
 
 
 class Subscription(
-    TestSubscription
+    CustomSubscription,
+    SomeModelCreatedSubscription,
+    SomeModelUpdatedSubscription,
+    SomeModelDeletedSubscription
 ):
     hello = graphene.String()
 
