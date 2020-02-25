@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "graphene_subscriptions"
-version = "1.0.2"
+version = "1.0.3"
 description = "A plug-and-play GraphQL subscription implementation for Graphene + Django built using Django Channels."
 homepage = "https://github.com/jaydenwindle/graphene-subscriptions"
 repository = "https://github.com/jaydenwindle/graphene-subscriptions"
@@ -29,9 +29,10 @@ classifiers = [
 
 [tool.poetry.dependencies]
 python = ">=3.6"
-django = ">=1.11"
+django = ">=2.2"
 channels = "^2.3"
 graphene-django = "^2.7"
+django-lifecycle = "^0.7.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.3"

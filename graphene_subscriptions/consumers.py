@@ -1,22 +1,11 @@
 import functools
-import json
 
-from django.utils.module_loading import import_string
-from django.conf import settings
-from django.core.exceptions import ImproperlyConfigured
 from graphene_django.settings import graphene_settings
-from graphql import parse
 from asgiref.sync import async_to_sync
-from channels.consumer import SyncConsumer
-from channels.exceptions import StopConsumer
-from rx import Observable
+from channels.generic.websocket import JsonWebsocketConsumer
 from rx.subjects import Subject
-from django.core.serializers import deserialize
 
-from graphene_subscriptions.events import SubscriptionEvent
-
-
-stream = Subject()
+from graphene_subscriptions.events import deserialize_value
 
 
 # GraphQL types might use info.context.user to access currently authenticated user.
@@ -34,18 +23,28 @@ class AttrDict:
         return self.data.get(item)
 
 
-class GraphqlSubscriptionConsumer(SyncConsumer):
-    def websocket_connect(self, message):
-        async_to_sync(self.channel_layer.group_add)("subscriptions", self.channel_name)
+class GraphqlSubscriptionConsumer(JsonWebsocketConsumer):
+    groups = {}
 
-        self.send({"type": "websocket.accept", "subprotocol": "graphql-ws"})
+    def subscribe(self, name):
+        stream = Subject()
+        if name not in self.groups:
+            self.groups[name] = stream
+            async_to_sync(self.channel_layer.group_add)(name, self.channel_name)
+        
+        return stream
 
-    def websocket_disconnect(self, message):
-        self.send({"type": "websocket.close", "code": 1000})
-        raise StopConsumer()
+    def connect(self):
+        self.accept("graphql-ws")
 
-    def websocket_receive(self, message):
-        request = json.loads(message["text"])
+    def disconnect(self, close_code):
+        for group in self.groups:
+            async_to_sync(self.channel_layer.group_discard)(
+                group,
+                self.channel_name
+            )
+
+    def receive_json(self, request):
         id = request.get("id")
 
         if request["type"] == "connection_init":
@@ -62,7 +61,7 @@ class GraphqlSubscriptionConsumer(SyncConsumer):
                 operation_name=payload.get("operationName"),
                 variables=payload.get("variables"),
                 context=context,
-                root=stream,
+                root=self,
                 allow_subscriptions=True,
             )
 
@@ -74,24 +73,25 @@ class GraphqlSubscriptionConsumer(SyncConsumer):
         elif request["type"] == "stop":
             pass
 
-    def signal_fired(self, message):
-        stream.on_next(SubscriptionEvent.from_dict(message["event"]))
+    def subscription_triggered(self, message):
+        group = message['group']
+
+        if group in self.groups:
+            stream = self.groups[group] 
+            value = deserialize_value(message['value'])
+
+            stream.on_next(value)
 
     def _send_result(self, id, result):
         errors = result.errors
 
-        self.send(
+        self.send_json(
             {
-                "type": "websocket.send",
-                "text": json.dumps(
-                    {
-                        "id": id,
-                        "type": "data",
-                        "payload": {
-                            "data": result.data,
-                            "errors": list(map(str, errors)) if errors else None,
-                        },
-                    }
-                ),
+                "id": id,
+                "type": "data",
+                "payload": {
+                    "data": result.data,
+                    "errors": list(map(str, errors)) if errors else None,
+                },
             }
         )

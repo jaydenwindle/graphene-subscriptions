@@ -2,8 +2,6 @@ import graphene
 from graphene_django.types import DjangoObjectType
 from rx import Observable
 
-from graphene_subscriptions.events import CREATED, UPDATED, DELETED
-
 from tests.models import SomeModel
 
 
@@ -19,48 +17,34 @@ class SomeModelCreatedSubscription(graphene.ObjectType):
     some_model_created = graphene.Field(SomeModelType)
 
     def resolve_some_model_created(root, info):
-        return root.filter(
-            lambda event: event.operation == CREATED
-            and isinstance(event.instance, SomeModel)
-        ).map(lambda event: event.instance)
+        return root.subscribe('someModelCreated')
 
 
 class SomeModelUpdatedSubscription(graphene.ObjectType):
-    some_model_updated = graphene.Field(SomeModelType, id=graphene.ID())
+    some_model_updated = graphene.Field(SomeModelType, id=graphene.String())
 
     def resolve_some_model_updated(root, info, id):
-        return root.filter(
-            lambda event: event.operation == UPDATED
-            and isinstance(event.instance, SomeModel)
-            and event.instance.pk == int(id)
-        ).map(lambda event: event.instance)
-
+        return root.subscribe(f'someModelUpdated.{id}')
 
 class SomeModelDeletedSubscription(graphene.ObjectType):
-    some_model_deleted = graphene.Field(SomeModelType, id=graphene.ID())
+    some_model_deleted = graphene.Field(SomeModelType, id=graphene.String())
 
     def resolve_some_model_deleted(root, info, id):
-        return root.filter(
-            lambda event: event.operation == DELETED
-            and isinstance(event.instance, SomeModel)
-            and event.instance.pk == int(id)
-        ).map(lambda event: event.instance)
+        return root.subscribe(f'someModelDeleted.{id}')
 
 
-class CustomEventSubscription(graphene.ObjectType):
+class CustomSubscription(graphene.ObjectType):
     custom_subscription = graphene.String()
 
     def resolve_custom_subscription(root, info):
-        return root.filter(lambda event: event.operation == CUSTOM_EVENT).map(
-            lambda event: event.instance
-        )
+        return root.subscribe('customSubscription')
 
 
 class Subscription(
-    CustomEventSubscription,
+    CustomSubscription,
     SomeModelCreatedSubscription,
     SomeModelUpdatedSubscription,
-    SomeModelDeletedSubscription,
+    SomeModelDeletedSubscription
 ):
     hello = graphene.String()
 
