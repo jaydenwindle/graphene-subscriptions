@@ -5,22 +5,16 @@ from asgiref.sync import async_to_sync
 from channels.generic.websocket import JsonWebsocketConsumer
 from rx.subjects import Subject
 
+from io import BytesIO
+from channels.http import AsgiRequest
+
+from django.contrib.auth.models import AnonymousUser
+from django.contrib.auth import get_user_model
+from jwt import decode as jwt_decode
+from django.conf import settings
+from django.db import close_old_connections
+
 from graphene_subscriptions.events import deserialize_value
-
-
-# GraphQL types might use info.context.user to access currently authenticated user.
-# When Query is called, info.context is request object,
-# however when Subscription is called, info.context is scope dict.
-# This is minimal wrapper around dict to mimic object behavior.
-class AttrDict:
-    def __init__(self, data):
-        self.data = data or {}
-
-    def __getattr__(self, item):
-        return self.get(item)
-
-    def get(self, item):
-        return self.data.get(item)
 
 
 class GraphqlSubscriptionConsumer(JsonWebsocketConsumer):
@@ -31,7 +25,6 @@ class GraphqlSubscriptionConsumer(JsonWebsocketConsumer):
         if name not in self.groups:
             self.groups[name] = stream
             async_to_sync(self.channel_layer.group_add)(name, self.channel_name)
-        
         return stream
 
     def connect(self):
@@ -45,14 +38,39 @@ class GraphqlSubscriptionConsumer(JsonWebsocketConsumer):
             )
 
     def receive_json(self, request):
+
         id = request.get("id")
 
         if request["type"] == "connection_init":
+            headers = dict(request["payload"])
+            if "Authorization" in headers:
+                    token_name, token_key = headers["Authorization"].split()
+                    if token_name == "JWT":
+                        token = jwt_decode(
+                            token_key,
+                            settings.SECRET_KEY,
+                            algorithms=["HS256"]
+                        )
+                        self.user = get_user_model().objects.get(
+                            username=token["username"]
+                        )
+                        close_old_connections()
             return
 
         elif request["type"] == "start":
+            
             payload = request["payload"]
-            context = AttrDict(self.scope)
+
+            temp = {}
+            for x, y in self.scope["headers"]:
+                temp[x.decode()]=y
+            self.scope["headers"] = temp
+
+            self.scope["method"] = "WebSocket"
+
+            context = AsgiRequest(self.scope, BytesIO(b""))
+
+            context.user = self.user 
 
             schema = graphene_settings.SCHEMA
 
@@ -74,6 +92,7 @@ class GraphqlSubscriptionConsumer(JsonWebsocketConsumer):
             pass
 
     def subscription_triggered(self, message):
+
         group = message['group']
 
         if group in self.groups:
@@ -83,6 +102,7 @@ class GraphqlSubscriptionConsumer(JsonWebsocketConsumer):
             stream.on_next(value)
 
     def _send_result(self, id, result):
+
         errors = result.errors
 
         self.send_json(
