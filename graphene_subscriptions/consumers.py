@@ -49,7 +49,10 @@ class GraphqlSubscriptionConsumer(SyncConsumer):
         id = request.get("id")
 
         if request["type"] == "connection_init":
-            return
+            self.send({"type": "connection_ack"})
+
+        elif request["type"] == "connection_terminate":
+            self.websocket_disconnect(message)
 
         elif request["type"] == "start":
             payload = request["payload"]
