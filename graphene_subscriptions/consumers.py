@@ -49,7 +49,7 @@ class GraphqlSubscriptionConsumer(SyncConsumer):
         id = request.get("id")
 
         if request["type"] == "connection_init":
-            self.send({"type": "connection_ack"})
+            self._send_connection_ack()
 
         elif request["type"] == "connection_terminate":
             self.websocket_disconnect(message)
@@ -94,6 +94,18 @@ class GraphqlSubscriptionConsumer(SyncConsumer):
                             "data": result.data,
                             "errors": list(map(str, errors)) if errors else None,
                         },
+                    }
+                ),
+            }
+        )
+
+    def _send_connection_ack(self):
+        self.send(
+            {
+                "type": "websocket.send",
+                "text": json.dumps(
+                    {
+                        "type": "connection_ack",
                     }
                 ),
             }
