@@ -79,19 +79,21 @@ class GraphqlSubscriptionConsumer(SyncConsumer):
 
     def _send_result(self, id, result):
         errors = result.errors
+        response = {
+                "id": id,
+                "type": "data",
+                "payload": {
+                    "data": result.data
+                }
+            }
+        
+        if errors is not None:
+            response["payload"]["errors"] = list(map(str, errors))
 
         self.send(
             {
                 "type": "websocket.send",
-                "text": json.dumps(
-                    {
-                        "id": id,
-                        "type": "data",
-                        "payload": {
-                            "data": result.data,
-                            "errors": list(map(str, errors)) if errors else None,
-                        },
-                    }
-                ),
+                "text": json.dumps(response),
             }
         )
+
