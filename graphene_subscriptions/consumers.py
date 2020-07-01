@@ -79,6 +79,10 @@ class GraphqlSubscriptionConsumer(SyncConsumer):
 
     def _send_result(self, id, result):
         errors = result.errors
+        
+        # Unpack the results of any loader promises
+        data = Promise.for_dict(result.data)
+        data = data.get() if is_thenable(data) else data
 
         self.send(
             {
