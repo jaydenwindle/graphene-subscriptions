@@ -9,6 +9,7 @@ from graphql import parse
 from asgiref.sync import async_to_sync
 from channels.consumer import SyncConsumer
 from channels.exceptions import StopConsumer
+from promise import Promise, is_thenable
 from rx import Observable
 from rx.subjects import Subject
 from django.core.serializers import deserialize
