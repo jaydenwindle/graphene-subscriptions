@@ -93,7 +93,7 @@ class GraphqlSubscriptionConsumer(SyncConsumer):
                         "id": id,
                         "type": "data",
                         "payload": {
-                            "data": result.data,
+                            "data": data,
                             "errors": list(map(str, errors)) if errors else None,
                         },
                     }
