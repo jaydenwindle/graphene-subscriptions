@@ -62,8 +62,24 @@ A plug-and-play GraphQL subscription implementation for Graphene + Django built 
         ]),
     })
     ```
+    
+5. Add `GraphQLSubscriptionView` to your `urls.py` file.
 
-5. Connect signals for any models you want to create subscriptions for
+    ```python
+    # your_project/urls.py
+    from django.urls import path
+    from graphene_subscriptions.views import GraphQLSubscriptionView
+
+    urlpatterns = [
+        # your urls...
+        path('graph/', GraphQLSubscriptionView.as_view()),
+    ]
+    
+    ```
+    GraphQL Playgrounds IDE is enabled by default.<br />
+    If you want to disable it you can use `GraphQLSubscriptionView.as_view(playground=False)` (`playground=True` by default)
+
+6. Connect signals for any models you want to create subscriptions for
 
     ```python
     # your_app/signals.py
