@@ -42,7 +42,7 @@ async def test_consumer_schema_execution_works():
 
     response = await communicator.receive_json_from()
 
-    assert response["payload"] == {"data": {"hello": "hello world!"}, "errors": None}
+    assert response["payload"] == {"data": {"hello": "hello world!"}}
 
 
 @pytest.mark.asyncio
@@ -72,7 +72,6 @@ async def test_model_created_subscription_succeeds():
 
     assert response["payload"] == {
         "data": {"someModelCreated": {"name": s.name}},
-        "errors": None,
     }
 
     post_save.disconnect(
@@ -112,7 +111,6 @@ async def test_model_updated_subscription_succeeds():
 
     assert response["payload"] == {
         "data": {"someModelUpdated": {"name": s.name}},
-        "errors": None,
     }
 
     post_save.disconnect(
@@ -154,7 +152,6 @@ async def test_model_deleted_subscription_succeeds():
 
     assert response["payload"] == {
         "data": {"someModelDeleted": {"name": s.name}},
-        "errors": None,
     }
 
     post_delete.disconnect(
@@ -193,7 +190,6 @@ async def test_model_subscription_with_variables_succeeds():
 
     assert response["payload"] == {
         "data": {"someModelUpdated": {"name": s.name}},
-        "errors": None,
     }
 
     post_save.disconnect(
@@ -226,5 +222,4 @@ async def test_custom_event_subscription_succeeds():
 
     assert response["payload"] == {
         "data": {"customSubscription": "some value"},
-        "errors": None,
     }
