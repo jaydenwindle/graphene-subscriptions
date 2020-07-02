@@ -72,7 +72,7 @@ A plug-and-play GraphQL subscription implementation for Graphene + Django built 
 
     urlpatterns = [
         # your urls...
-        path('graph/', GraphQLSubscriptionView.as_view()),
+        path('graphql/', GraphQLSubscriptionView.as_view()),
     ]
     
     ```
