@@ -68,8 +68,8 @@ class DjangoObjectSubscription(ObjectType):
 
         assert hasattr(cls, "subscribe"), "All subscribtions must define a subscribe method in it"
 
-        post_save.connect(ModelSubscriptionObjectType.post_save_subscription, sender=model)
-        post_delete.connect(ModelSubscriptionObjectType.post_delete_subscription, sender=model)
+        post_save.connect(DjangoObjectSubscription.post_save_subscription, sender=model)
+        post_delete.connect(DjangoObjectSubscription.post_delete_subscription, sender=model)
 
         if _meta.fields:
             _meta.fields.update(fields)
@@ -84,7 +84,7 @@ class DjangoObjectSubscription(ObjectType):
         _meta.model = model
         _meta.description = description
 
-        super(ModelSubscriptionObjectType, cls).__init_subclass_with_meta__(_meta=_meta, name=name, description=description, **options)
+        super(DjangoObjectSubscription, cls).__init_subclass_with_meta__(_meta=_meta, name=name, description=description, **options)
         
 
     @staticmethod
