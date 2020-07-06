@@ -49,13 +49,6 @@ class DjangoObjectSubscription(ObjectType):
             ), f'All interfaces of {cls.__name__} must be a subclass of Interface. Received "{interface}".'
             fields.update(interface._meta.fields)
 
-        if not output:
-            # If output is defined, we don't need to get the fields
-            fields = {}
-            for base in reversed(cls.__mro__):
-                fields.update(yank_fields_from_attrs(base.__dict__, _as=Field))
-            output = cls
-
         if not arguments:
             input_class = getattr(cls, "Arguments", None)
             if input_class:
