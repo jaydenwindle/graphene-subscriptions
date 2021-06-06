@@ -9,6 +9,7 @@ from graphql import parse
 from asgiref.sync import async_to_sync
 from channels.consumer import SyncConsumer
 from channels.exceptions import StopConsumer
+from promise import Promise, is_thenable
 from rx import Observable
 from rx.subjects import Subject
 from django.core.serializers import deserialize
@@ -79,6 +80,10 @@ class GraphqlSubscriptionConsumer(SyncConsumer):
 
     def _send_result(self, id, result):
         errors = result.errors
+        
+        # Unpack the results of any loader promises
+        data = Promise.for_dict(result.data)
+        data = data.get() if is_thenable(data) else data
 
         self.send(
             {
@@ -88,7 +93,7 @@ class GraphqlSubscriptionConsumer(SyncConsumer):
                         "id": id,
                         "type": "data",
                         "payload": {
-                            "data": result.data,
+                            "data": data,
                             "errors": list(map(str, errors)) if errors else None,
                         },
                     }
