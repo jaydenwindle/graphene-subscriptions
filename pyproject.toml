@@ -30,7 +30,7 @@ classifiers = [
 [tool.poetry.dependencies]
 python = ">=3.6"
 django = ">=1.11"
-channels = "^2.3"
+channels = "^2.3, <4"
 graphene-django = "^2.7"
 promise = "^2.3"
 
