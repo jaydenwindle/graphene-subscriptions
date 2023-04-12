@@ -1,20 +1,12 @@
 import functools
 import json
 
-from django.utils.module_loading import import_string
-from django.conf import settings
-from django.core.exceptions import ImproperlyConfigured
 from graphene_django.settings import graphene_settings
-from graphql import parse
-from asgiref.sync import async_to_sync
-from channels.consumer import SyncConsumer
-from channels.exceptions import StopConsumer
-from rx import Observable
-from rx.subjects import Subject
-from django.core.serializers import deserialize
+from rx.subject import Subject
 
 from graphene_subscriptions.events import SubscriptionEvent
-
+from channels.generic.websocket import AsyncWebsocketConsumer
+from graphql import execute
 
 stream = Subject()
 
@@ -34,18 +26,17 @@ class AttrDict:
         return self.data.get(item)
 
 
-class GraphqlSubscriptionConsumer(SyncConsumer):
-    def websocket_connect(self, message):
-        async_to_sync(self.channel_layer.group_add)("subscriptions", self.channel_name)
+class GraphqlSubscriptionConsumer(AsyncWebsocketConsumer):
 
-        self.send({"type": "websocket.accept", "subprotocol": "graphql-ws"})
+    async def connect(self):
+        await self.channel_layer.group_add("subscriptions", self.channel_name)
+        await self.accept("graphql-ws")
 
-    def websocket_disconnect(self, message):
-        self.send({"type": "websocket.close", "code": 1000})
-        raise StopConsumer()
+    async def disconnect(self, close_code):
+        await self.send({"type": "websocket.close", "code": 1000})
 
-    def websocket_receive(self, message):
-        request = json.loads(message["text"])
+    async def receive(self, text_data):
+        request = json.loads(text_data)
         id = request.get("id")
 
         if request["type"] == "connection_init":
@@ -56,31 +47,32 @@ class GraphqlSubscriptionConsumer(SyncConsumer):
             context = AttrDict(self.scope)
 
             schema = graphene_settings.SCHEMA
+            variables = payload.get("variables")
 
-            result = schema.execute(
+            result = await execute(
+                schema,
                 payload["query"],
                 operation_name=payload.get("operationName"),
-                variables=payload.get("variables"),
-                context=context,
-                root=stream,
-                allow_subscriptions=True,
+                variable_values=variables,
+                context_value=context,
+                root_value=None,
             )
 
             if hasattr(result, "subscribe"):
                 result.subscribe(functools.partial(self._send_result, id))
             else:
-                self._send_result(id, result)
+                await self._send_result(id, result)
 
         elif request["type"] == "stop":
             pass
 
-    def signal_fired(self, message):
-        stream.on_next(SubscriptionEvent.from_dict(message["event"]))
+    async def signal_fired(self, event):
+        stream.on_next(SubscriptionEvent.from_dict(event["event"]))
 
-    def _send_result(self, id, result):
+    async def _send_result(self, id, result):
         errors = result.errors
 
-        self.send(
+        await self.send(
             {
                 "type": "websocket.send",
                 "text": json.dumps(

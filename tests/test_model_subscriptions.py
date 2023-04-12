@@ -28,7 +28,7 @@ async def query(query, communicator, variables=None):
 @pytest.mark.asyncio
 @pytest.mark.django_db
 async def test_consumer_schema_execution_works():
-    communicator = WebsocketCommunicator(GraphqlSubscriptionConsumer, "/graphql/")
+    communicator = WebsocketCommunicator(GraphqlSubscriptionConsumer.as_asgi(), "/graphql/")
     connected, subprotocol = await communicator.connect()
     assert connected
 
@@ -52,7 +52,7 @@ async def test_model_created_subscription_succeeds():
         post_save_subscription, sender=SomeModel, dispatch_uid="some_model_post_save"
     )
 
-    communicator = WebsocketCommunicator(GraphqlSubscriptionConsumer, "/graphql/")
+    communicator = WebsocketCommunicator(GraphqlSubscriptionConsumer.as_asgi(), "/graphql/")
     connected, subprotocol = await communicator.connect()
     assert connected
 
@@ -87,7 +87,7 @@ async def test_model_updated_subscription_succeeds():
         post_save_subscription, sender=SomeModel, dispatch_uid="some_model_post_delete"
     )
 
-    communicator = WebsocketCommunicator(GraphqlSubscriptionConsumer, "/graphql/")
+    communicator = WebsocketCommunicator(GraphqlSubscriptionConsumer.as_asgi(), "/graphql/")
     connected, subprotocol = await communicator.connect()
     assert connected
 
@@ -129,7 +129,7 @@ async def test_model_deleted_subscription_succeeds():
         dispatch_uid="some_model_post_delete",
     )
 
-    communicator = WebsocketCommunicator(GraphqlSubscriptionConsumer, "/graphql/")
+    communicator = WebsocketCommunicator(GraphqlSubscriptionConsumer.as_asgi(), "/graphql/")
     connected, subprotocol = await communicator.connect()
     assert connected
 
@@ -171,7 +171,7 @@ async def test_model_subscription_with_variables_succeeds():
         post_save_subscription, sender=SomeModel, dispatch_uid="some_model_post_delete"
     )
 
-    communicator = WebsocketCommunicator(GraphqlSubscriptionConsumer, "/graphql/")
+    communicator = WebsocketCommunicator(GraphqlSubscriptionConsumer.as_asgi(), "/graphql/")
     connected, subprotocol = await communicator.connect()
     assert connected
 
@@ -204,7 +204,7 @@ async def test_model_subscription_with_variables_succeeds():
 @pytest.mark.asyncio
 @pytest.mark.django_db
 async def test_custom_event_subscription_succeeds():
-    communicator = WebsocketCommunicator(GraphqlSubscriptionConsumer, "/graphql/")
+    communicator = WebsocketCommunicator(GraphqlSubscriptionConsumer.as_asgi(), "/graphql/")
     connected, subprotocol = await communicator.connect()
     assert connected
 
